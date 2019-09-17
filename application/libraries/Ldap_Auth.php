@@ -10,7 +10,7 @@ defined("BASEPATH") OR exit("No direct script access allowed");
  * @package         Ldap_Auth
  * @subpackage      Ldap_Auth Library
  * @author          Lucas Halbert <lhalbert@lhalbert.xyz>
- * @version         0.0.1
+ * @version         0.0.2
  * @link            https://github.com/lucashalbert/codeigniter-Ldap_Auth
  * @license         BSD 3-Clause "New" or "Revised" License
  * @copyright       Copyright © 2019 by Lucas Halbert <lhalbert@lhalbert.xyz>
@@ -27,7 +27,14 @@ class Ldap_Auth {
     // Declare protected configuration variables
     protected $servers;
     protected $ports;
+    protected $tls_ca_cert;
+    protected $tmp_tls_ca_certfile;
+    protected $tls_cert;
+    protected $tmp_tls_certfile;
+    protected $tls_key;
+    protected $tmp_tls_keyfile;
     protected $tls_required;
+    protected $start_tls;
     protected $base_dn;
     protected $user_dn;
     protected $user_attribute;
@@ -65,7 +72,11 @@ class Ldap_Auth {
         // Load necessary configuration data from config file
         $this->servers          = $this->CI->config->item("servers", $this->customer);
         $this->ports            = $this->CI->config->item("ports", $this->customer);
+        $this->tls_ca_cert      = $this->CI->config->item("tls_ca_cert", $this->customer);
+        $this->tls_cert         = $this->CI->config->item("tls_cert", $this->customer);
+        $this->tls_key          = $this->CI->config->item("tls_key", $this->customer);
         $this->tls_required     = $this->CI->config->item("tls_required", $this->customer);
+        $this->start_tls        = $this->CI->config->item("start_tls", $this->customer);
         $this->base_dn          = $this->CI->config->item("base_dn", $this->customer);
         $this->user_dn          = $this->CI->config->item("user_dn", $this->customer);
         $this->user_attribute   = $this->CI->config->item("user_attribute", $this->customer);
@@ -86,6 +97,17 @@ class Ldap_Auth {
         // Close LDAP connection
         if($this->ldap_connection) {
             ldap_close($this->ldap_connection);
+        }
+
+        // Destroy temporary certificate files
+        if($this->tmp_tls_ca_certfile) {
+            $this->_destroy_tmp_file($this->tmp_tls_ca_certfile);
+        }
+        if($this->tmp_tls_certfile) {
+            $this->_destroy_tmp_file($this->tmp_tls_certfile);
+        }
+        if($this->tmp_tls_keyfile) {
+            $this->_destroy_tmp_file($this->tmp_tls_keyfile);
         }
     }
 
@@ -149,31 +171,72 @@ class Ldap_Auth {
      * @return boolean
      */
     private function _connect_ldap() {
+        if($this->tls_ca_cert) {
+            // Create temporary CA certificate file
+            $this->tmp_tls_ca_certfile = $this->_create_tmp_file($this->tls_ca_cert);
+        }
+        if($this->tls_cert) {
+            // Create temporary certificate file
+            $this->tmp_tls_certfile = $this->_create_tmp_file($this->tls_cert);
+        }
+        if($this->tls_key) {
+            // Create temporary key file
+            $this->tmp_tls_keyfile = $this->_create_tmp_file($this->tls_key);
+        }
+
         // Loop over all configured LDAP servers and attempt connection
         foreach($this->servers as $i => $server) {
             // Validate server connection string
             $this->ldap_connection = ldap_connect($server);
+
             if($this->ldap_connection) {
                 log_message("info", "LDAP connection endpoint \"" . $server . "\" valid.");
                 
-                // Set LDAP options
+                // Set LDAP protocol version
                 if(! ldap_set_option($this->ldap_connection, LDAP_OPT_PROTOCOL_VERSION, 3)) {
                     log_message("error", "Error setting LDAPv3.");
                     show_error("Error setting LDAPv3.", 500, $heading = "An Error Was Encountered");
-                    return FALSE;
-                } elseif(! ldap_set_option($this->ldap_connection, LDAP_OPT_REFERRALS, 0)) {
+                }
+                // Set LDAP referrals to 0
+                if(! ldap_set_option($this->ldap_connection, LDAP_OPT_REFERRALS, 0)) {
                     log_message("error", "Error setting Referrals to 0.");
                     show_error("Error setting Referrals to 0.", 500, $heading = "An Error Was Encountered");
-                    return FALSE;
-                } elseif(! ldap_set_option($this->ldap_connection, LDAP_OPT_NETWORK_TIMEOUT, 10)) {
+                }
+                // Set LDAP connection timeout to 10 seconds
+                if(! ldap_set_option($this->ldap_connection, LDAP_OPT_NETWORK_TIMEOUT, 10)) {
                     log_message("error", "Error setting connection timeout.");
                     show_error("Error setting connection timeout.", 500, $heading = "An Error Was Encountered");
-                    return FALSE;
-                } elseif($this->tls_required) {
-                    if(! ldap_start_tls($this->ldap_connection)) {
-                        log_message("error", "Error starting TLS connection.");
-                        show_error("Error starting TLS connection.", 500, $heading = "An Error Was Encountered");
-                        return FALSE;
+                }
+                if($this->tls_required) {
+                    // Set REQUIRE_CERT to Never
+                    if(! ldap_set_option($this->ldap_connection, LDAP_OPT_X_TLS_REQUIRE_CERT, LDAP_OPT_X_TLS_NEVER)) {
+                        log_message("error", "Error setting TLS REQCERT Never.");
+                        show_error("Error setting TLS REQCERT Never.", 500, $heading = "An Error Was Encountered");
+                    }
+                    if($this->tls_ca_cert) {
+                        // Set CACERTFILE location to the tmp_tls_ca_certfile path
+                        if(! ldap_set_option($this->ldap_connection, LDAP_OPT_X_TLS_CACERTFILE, $this->tmp_tls_ca_certfile)) {
+                            log_message("error", "Error setting the TLS CA Certificate file.");
+                            show_error("Error setting the TLS CA Certificate file.", 500, $heading = "An Error Was Encountered");
+                        }
+                    }
+                    if($this->tls_cert) {
+                        // Set CERTFILE location to the tmp_tls_certfile path
+                        if(! ldap_set_option($this->ldap_connection, LDAP_OPT_X_TLS_CERTFILE, $this->tmp_tls_certfile)) {
+                            log_message("error", "Error setting the TLS Certificate file.");
+                            show_error("Error setting the TLS Certificate file.", 500, $heading = "An Error Was Encountered");
+                        }
+                    }
+                    if($this->tls_key) {
+                        // Set KEYFILE location to the tmp_tls_keyfile path
+                        if(! ldap_set_option($this->ldap_connection, LDAP_OPT_X_TLS_KEYFILE, $this->tmp_tls_keyfile)) {
+                            log_message("error", "Error setting the TLS Key file.");
+                            show_error("Error setting the TLS Key file.", 500, $heading = "An Error Was Encountered");
+                        }
+                    }
+                    if($this->start_tls) {
+                        // Start TLS
+                        ldap_start_tls($this->ldap_connection);
                     }
                 }
             
@@ -201,17 +264,15 @@ class Ldap_Auth {
         if(! $this->ldap_connection) {
             log_message("error", "Error connecting to all defined LDAP servers.");
             show_error("Error connecting to all defined LDAP servers.", 500, $heading = "An Error Was Encountered");
-            return FALSE;
         }
 
         // Check if bind succeeded
         if(! $bind) {
             log_message("error", "Error performing initial LDAP bind. Request originated from " . $this->client_ip . ".");
             show_error("Error performing initial LDAP bind. Request originated from " . $this->client_ip . ".", 500, $heading = "An Error Was Encountered");
-            return FALSE;
-        } else {
-            return TRUE;
         }
+
+        return TRUE;
     }
 
 
@@ -279,5 +340,49 @@ class Ldap_Auth {
         } else {
             return "Unknown_IP";
         }
+    }
+
+
+    /**
+     * Function to create temporary TLS CA Cert, Cert, and key files
+     * for use with SSL ldap connections.
+     * @access private
+     * @param string $contents
+     * @return string $file
+     */
+    protected function _create_tmp_file($contents) {
+        // Create temporary file
+        $file = tempnam(sys_get_temp_dir(), 'ldap_tls');
+
+        // Open temporary file handle for writing
+        $handle = fopen($file, "w");
+
+        // Write contents to file handle
+        fwrite($handle, $contents);
+
+        // Close the file handle
+        fclose($handle);
+
+        // return the path of the $tmp_file
+        return $file;
+    }
+
+
+    /**
+     * Function to destroy temporary TLS CA Cert, Cert, and key files
+     * for use with SSL ldap connections.
+     * @access private
+     * @param string $file
+     * @return boolean
+     */
+    protected function _destroy_tmp_file($file) {
+        // Delete temporary files
+        if(! unlink($file)) {
+            log_message("error", "Error destroying temporary file: " . $file);
+            show_error("Error destroying temporary files", 500, $heading = "An Error Was Encountered");
+            return FALSE;
+        }
+
+        return TRUE;
     }
 }

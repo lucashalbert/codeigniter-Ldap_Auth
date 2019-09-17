@@ -11,7 +11,7 @@ defined("BASEPATH") OR exit("No direct script access allowed");
  * @package         Ldap_Auth
  * @subpackage      Auth Controller
  * @author          Lucas Halbert <lhalbert@lhalbert.xyz>
- * @version         0.0.1
+ * @version         0.0.2
  * @link            https://github.com/lucashalbert/codeigniter-Ldap_Auth
  * @license         BSD 3-Clause "New" or "Revised" License
  * @copyright       Copyright © 2019 by Lucas Halbert <lhalbert@lhalbert.xyz> */
