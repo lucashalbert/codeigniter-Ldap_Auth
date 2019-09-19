@@ -207,12 +207,54 @@ class Ldap_Auth {
                     log_message("error", "Error setting connection timeout.");
                     show_error("Error setting connection timeout.", 500, $heading = "An Error Was Encountered");
                 }
+                // Check if TLS required
                 if($this->tls_required) {
-                    // Set REQUIRE_CERT to Never
-                    if(! ldap_set_option($this->ldap_connection, LDAP_OPT_X_TLS_REQUIRE_CERT, LDAP_OPT_X_TLS_NEVER)) {
-                        log_message("error", "Error setting TLS REQCERT Never.");
-                        show_error("Error setting TLS REQCERT Never.", 500, $heading = "An Error Was Encountered");
+                    // Switch statement to determine if REQUIRE_CERT should be FALSE, NEVER, HARD, DEMAND, ALLOW, TRY
+                    switch($this->tls_required) {
+                        case "NEVER":
+                            // Set REQUIRE_CERT to Never
+                            if(! ldap_set_option($this->ldap_connection, LDAP_OPT_X_TLS_REQUIRE_CERT, LDAP_OPT_X_TLS_NEVER)) {
+                                log_message("error", "Error setting TLS REQCERT to NEVER.");
+                                show_error("Error setting TLS REQCERT to NEVER.", 500, $heading = "An Error Was Encountered");
+                            }
+                            break;
+                        case "HARD":
+                            // Set REQUIRE_CERT to Never
+                            if(! ldap_set_option($this->ldap_connection, LDAP_OPT_X_TLS_REQUIRE_CERT, LDAP_OPT_X_TLS_HARD)) {
+                                log_message("error", "Error setting TLS REQCERT to HARD.");
+                                show_error("Error setting TLS REQCERT to HARD.", 500, $heading = "An Error Was Encountered");
+                            }
+                            break;
+                        case "DEMAND":
+                            // Set REQUIRE_CERT to Never
+                            if(! ldap_set_option($this->ldap_connection, LDAP_OPT_X_TLS_REQUIRE_CERT, LDAP_OPT_X_TLS_DEMAND)) {
+                                log_message("error", "Error setting TLS REQCERT to DEMAND.");
+                                show_error("Error setting TLS REQCERT to DEMAND.", 500, $heading = "An Error Was Encountered");
+                            }
+                            break;
+                        case "ALLOW":
+                            // Set REQUIRE_CERT to Never
+                            if(! ldap_set_option($this->ldap_connection, LDAP_OPT_X_TLS_REQUIRE_CERT, LDAP_OPT_X_TLS_ALLOW)) {
+                                log_message("error", "Error setting TLS REQCERT to ALLOW.");
+                                show_error("Error setting TLS REQCERT to ALLOW.", 500, $heading = "An Error Was Encountered");
+                            }
+                            break;
+                        case "TRY":
+                            // Set REQUIRE_CERT to Never
+                            if(! ldap_set_option($this->ldap_connection, LDAP_OPT_X_TLS_REQUIRE_CERT, LDAP_OPT_X_TLS_TRY)) {
+                                log_message("error", "Error setting TLS REQCERT to TRY.");
+                                show_error("Error setting TLS REQCERT to TRY.", 500, $heading = "An Error Was Encountered");
+                            }
+                            break;
+                        default:
+                            // Set REQUIRE_CERT to TRY
+                            if(! ldap_set_option($this->ldap_connection, LDAP_OPT_X_TLS_REQUIRE_CERT, LDAP_OPT_X_TLS_TRY)) {
+                                log_message("error", "Error setting TLS REQCERT to TRY.");
+                                show_error("Error setting TLS REQCERT to TRY.", 500, $heading = "An Error Was Encountered");
+                            }
+                            break;
                     }
+
                     if($this->tls_ca_cert) {
                         // Set CACERTFILE location to the tmp_tls_ca_certfile path
                         if(! ldap_set_option($this->ldap_connection, LDAP_OPT_X_TLS_CACERTFILE, $this->tmp_tls_ca_certfile)) {

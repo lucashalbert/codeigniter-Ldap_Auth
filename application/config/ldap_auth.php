@@ -20,9 +20,11 @@ defined("BASEPATH") OR exit("No direct script access allowed");
 /**
  * CustomerA Configuration
  */
-$config["customerA"]["servers"] = array("ldap://dc1.customerA.tld",
-										"ldap://dc2.customerA.tld",
-										"ldap://dc3.customerA.tld");
+$config["customerA"]["servers"] = array(
+	"ldap://dc1.customerA.tld",
+	"ldap://dc2.customerA.tld",
+	"ldap://dc3.customerA.tld"
+);
 $config["customerA"]["tls_ca_cert"] = "-----BEGIN CERTIFICATE-----
 MIICpjCCAY4CCQDQn/6kcadhszANBgkqhkiG9w0BAQsFADAVMRMwEQYDVQQDDApF
 WEFNUExFLUNBMB4XDTE5MDkxNzE3NTgwMFoXDTIyMDYxMzE3NTgwMFowFTETMBEG
@@ -84,7 +86,7 @@ PqRpfkECgYAB8GyA4sgrREL6S8SjLLHjU0KA0ViDm6q6PS3fhl70z07tEArFCsg2
 jF83FdbpFVHVCOc6iGc0e7jjvQAyHtskSRL6IIbRPinP5Yq2RIz0z1QrP4l5iaev
 TCjF9rxX9cs9ZKTBlbLnSG4Ok/p85n3eMKcI8A8Hq6WuHv/aFVl+Gw==
 -----END RSA PRIVATE KEY-----";
-$config["customerA"]["tls_required"] = TRUE;
+$config["customerA"]["tls_required"] = "DEMAND";		// Can be FALSE, NEVER, HARD, DEMAND, ALLOW, TRY
 $config["customerA"]["start_tls"] = TRUE;
 $config["customerA"]["base_dn"] = "dc=domain,dc=customerA,dc=tld";
 $config["customerA"]["user_attribute"] = "samaccountname";
@@ -96,9 +98,11 @@ $config["customerA"]["member_attribute"] = "memberUid";
 /**
  * CustomerB Configuration
  */
-$config["customerB"]["servers"] = array("ldap://directory1.customerB.tld",
-										"ldap://directory2.customerB.tld",
-										"ldap://directory3.customerB.tld");
+$config["customerB"]["servers"] = array(
+	"ldap://directory1.customerB.tld",
+	"ldap://directory2.customerB.tld",
+	"ldap://directory3.customerB.tld"
+);
 $config["customerB"]["tls_ca_cert"] = "-----BEGIN CERTIFICATE-----
 MIICpjCCAY4CCQDQn/6kcadhszANBgkqhkiG9w0BAQsFADAVMRMwEQYDVQQDDApF
 WEFNUExFLUNBMB4XDTE5MDkxNzE3NTgwMFoXDTIyMDYxMzE3NTgwMFowFTETMBEG
@@ -160,7 +164,7 @@ PqRpfkECgYAB8GyA4sgrREL6S8SjLLHjU0KA0ViDm6q6PS3fhl70z07tEArFCsg2
 jF83FdbpFVHVCOc6iGc0e7jjvQAyHtskSRL6IIbRPinP5Yq2RIz0z1QrP4l5iaev
 TCjF9rxX9cs9ZKTBlbLnSG4Ok/p85n3eMKcI8A8Hq6WuHv/aFVl+Gw==
 -----END RSA PRIVATE KEY-----";
-$config["customerB"]["tls_required"] = TRUE;
+$config["customerB"]["tls_required"] = "DEMAND";		// Can be FALSE, NEVER, HARD, DEMAND, ALLOW, TRY
 $config["customerB"]["start_tls"] = TRUE;
 $config["customerB"]["base_dn"] = "dc=customerB,dc=tld";
 $config["customerB"]["user_attribute"] = "uid";
